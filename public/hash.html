@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Tools — Hash Generator</title>
+  <link rel="stylesheet" href="/styles/main.css" />
+  <style>
+    .tool-section { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+    .tool-textarea {
+      width: 100%; min-height: 120px; resize: vertical;
+      background: var(--bg-2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 12px 14px; font-family: inherit; font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .tool-textarea:focus { outline: none; border-color: var(--accent); }
+    .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .input-type-btn {
+      background: var(--bg-3); border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 20px; padding: 4px 14px;
+      font-size: 0.8rem; cursor: pointer; transition: 0.15s;
+    }
+    .input-type-btn.active { border-color: var(--accent); color: var(--text); }
+    .char-count { margin-left: auto; color: var(--text-muted); font-size: 0.8rem; }
+
+    .hash-table { width: 100%; border-collapse: collapse; }
+    .hash-table th {
+      text-align: left; padding: 10px 12px;
+      border-bottom: 1px solid var(--border); color: var(--text-muted);
+      font-size: 0.8rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .hash-table td { padding: 12px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .hash-table tr:last-child td { border-bottom: none; }
+    .algo-name { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; width: 90px; }
+    .hash-value {
+      font-family: 'Courier New', monospace; font-size: 0.8rem; color: var(--text);
+      word-break: break-all; padding-right: 8px;
+    }
+    .hash-value.empty { color: var(--text-muted); font-family: inherit; font-size: 0.85rem; }
+    .copy-btn {
+      background: var(--bg-3); border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 6px;
+      padding: 4px 10px; font-size: 0.75rem; cursor: pointer;
+      white-space: nowrap; transition: 0.15s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+    .copy-btn.copied { border-color: #4caf50; color: #4caf50; }
+
+    .section-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
+    .results-box {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand">🐙 Octopus Tools</a>
+      <nav>
+        <a href="/" class="nav-link">Home</a>
+        <a href="/speed-reader.html" class="nav-link">Speed Reader</a>
+        <a href="/hash.html" class="nav-link active">Hash</a>
+        <a href="/baseconv.html" class="nav-link">Base Conv</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Hash Generator</h1>
+    <p class="tagline">MD5 · SHA-1 · SHA-256 · SHA-384 · SHA-512</p>
+  </section>
+
+  <section class="tool-section">
+    <div class="input-row">
+      <button class="input-type-btn active" id="btn-text">Text</button>
+      <button class="input-type-btn" id="btn-hex">Hex bytes</button>
+      <span class="char-count" id="char-count">0 bytes</span>
+    </div>
+
+    <textarea class="tool-textarea" id="input" placeholder="Type or paste text to hash…" spellcheck="false"></textarea>
+
+    <div class="results-box">
+      <table class="hash-table">
+        <thead><tr><th>Algorithm</th><th>Hash</th><th></th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
+  </footer>
+
+  <script>
+  // ── MD5 (RFC 1321) ────────────────────────────────────────────────────────
+  function md5(input) {
+    const str = unescape(encodeURIComponent(input));
+    function safeAdd(x, y) { const l = (x & 0xffff) + (y & 0xffff); return ((x >> 16) + (y >> 16) + (l >> 16)) << 16 | l & 0xffff; }
+    function rol(n, c) { return n << c | n >>> 32 - c; }
+    function cmn(q, a, b, x, s, t) { return safeAdd(rol(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b); }
+    const ff = (a,b,c,d,x,s,t) => cmn(b&c|~b&d,a,b,x,s,t);
+    const gg = (a,b,c,d,x,s,t) => cmn(b&d|c&~d,a,b,x,s,t);
+    const hh = (a,b,c,d,x,s,t) => cmn(b^c^d,a,b,x,s,t);
+    const ii = (a,b,c,d,x,s,t) => cmn(c^(b|~d),a,b,x,s,t);
+    const m = []; const n = str.length;
+    for (let i = 0; i < n; i++) m[i>>2] = (m[i>>2]||0) | str.charCodeAt(i) << (i%4)*8;
+    m[n>>2] = (m[n>>2]||0) | 0x80 << (n%4)*8;
+    m[(n+8>>6<<4)+14] = n*8;
+    let a=1732584193, b=-271733879, c=-1732584194, d=271733878;
+    for (let i = 0; i < m.length; i += 16) {
+      const [A,B,C,D]=[a,b,c,d];
+      a=ff(a,b,c,d,m[i+0],7,-680876936);   d=ff(d,a,b,c,m[i+1],12,-389564586);
+      c=ff(c,d,a,b,m[i+2],17,606105819);   b=ff(b,c,d,a,m[i+3],22,-1044525330);
+      a=ff(a,b,c,d,m[i+4],7,-176418897);   d=ff(d,a,b,c,m[i+5],12,1200080426);
+      c=ff(c,d,a,b,m[i+6],17,-1473231341); b=ff(b,c,d,a,m[i+7],22,-45705983);
+      a=ff(a,b,c,d,m[i+8],7,1770035416);   d=ff(d,a,b,c,m[i+9],12,-1958414417);
+      c=ff(c,d,a,b,m[i+10],17,-42063);     b=ff(b,c,d,a,m[i+11],22,-1990404162);
+      a=ff(a,b,c,d,m[i+12],7,1804603682);  d=ff(d,a,b,c,m[i+13],12,-40341101);
+      c=ff(c,d,a,b,m[i+14],17,-1502002290);b=ff(b,c,d,a,m[i+15],22,1236535329);
+      a=gg(a,b,c,d,m[i+1],5,-165796510);   d=gg(d,a,b,c,m[i+6],9,-1069501632);
+      c=gg(c,d,a,b,m[i+11],14,643717713);  b=gg(b,c,d,a,m[i+0],20,-373897302);
+      a=gg(a,b,c,d,m[i+5],5,-701558691);   d=gg(d,a,b,c,m[i+10],9,38016083);
+      c=gg(c,d,a,b,m[i+15],14,-660478335); b=gg(b,c,d,a,m[i+4],20,-405537848);
+      a=gg(a,b,c,d,m[i+9],5,568446438);    d=gg(d,a,b,c,m[i+14],9,-1019803690);
+      c=gg(c,d,a,b,m[i+3],14,-187363961);  b=gg(b,c,d,a,m[i+8],20,1163531501);
+      a=gg(a,b,c,d,m[i+13],5,-1444681467); d=gg(d,a,b,c,m[i+2],9,-51403784);
+      c=gg(c,d,a,b,m[i+7],14,1735328473);  b=gg(b,c,d,a,m[i+12],20,-1926607734);
+      a=hh(a,b,c,d,m[i+5],4,-378558);      d=hh(d,a,b,c,m[i+8],11,-2022574463);
+      c=hh(c,d,a,b,m[i+11],16,1839030562); b=hh(b,c,d,a,m[i+14],23,-35309556);
+      a=hh(a,b,c,d,m[i+1],4,-1530992060);  d=hh(d,a,b,c,m[i+4],11,1272893353);
+      c=hh(c,d,a,b,m[i+7],16,-155497632);  b=hh(b,c,d,a,m[i+10],23,-1094730640);
+      a=hh(a,b,c,d,m[i+13],4,681279174);   d=hh(d,a,b,c,m[i+0],11,-358537222);
+      c=hh(c,d,a,b,m[i+3],16,-722521979);  b=hh(b,c,d,a,m[i+6],23,76029189);
+      a=hh(a,b,c,d,m[i+9],4,-640364487);   d=hh(d,a,b,c,m[i+12],11,-421815835);
+      c=hh(c,d,a,b,m[i+15],16,530742520);  b=hh(b,c,d,a,m[i+2],23,-995338651);
+      a=ii(a,b,c,d,m[i+0],6,-198630844);   d=ii(d,a,b,c,m[i+7],10,1126891415);
+      c=ii(c,d,a,b,m[i+14],15,-1416354905);b=ii(b,c,d,a,m[i+5],21,-57434055);
+      a=ii(a,b,c,d,m[i+12],6,1700485571);  d=ii(d,a,b,c,m[i+3],10,-1894986606);
+      c=ii(c,d,a,b,m[i+10],15,-1051523);   b=ii(b,c,d,a,m[i+1],21,-2054922799);
+      a=ii(a,b,c,d,m[i+8],6,1873313359);   d=ii(d,a,b,c,m[i+15],10,-30611744);
+      c=ii(c,d,a,b,m[i+6],15,-1560198380); b=ii(b,c,d,a,m[i+13],21,1309151649);
+      a=ii(a,b,c,d,m[i+4],6,-145523070);   d=ii(d,a,b,c,m[i+11],10,-1120210379);
+      c=ii(c,d,a,b,m[i+2],15,718787259);   b=ii(b,c,d,a,m[i+9],21,-343485551);
+      a=safeAdd(a,A); b=safeAdd(b,B); c=safeAdd(c,C); d=safeAdd(d,D);
+    }
+    const w = n => [...Array(4)].map((_,i)=>('0'+((n>>i*8)&0xff).toString(16)).slice(-2)).join('');
+    return w(a)+w(b)+w(c)+w(d);
+  }
+
+  // ── SHA via Web Crypto ────────────────────────────────────────────────────
+  async function sha(algo, data) {
+    const buf = await crypto.subtle.digest(algo, data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  // ── UI ────────────────────────────────────────────────────────────────────
+  const ALGOS = ['MD5','SHA-1','SHA-256','SHA-384','SHA-512'];
+  const tbody = document.getElementById('results');
+  const inputEl = document.getElementById('input');
+  const charCount = document.getElementById('char-count');
+  let inputMode = 'text'; // 'text' | 'hex'
+
+  // Build table rows
+  ALGOS.forEach(algo => {
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + algo;
+    tr.innerHTML = `
+      <td class="algo-name">${algo}</td>
+      <td><span class="hash-value empty" id="val-${algo}">—</span></td>
+      <td><button class="copy-btn" id="copy-${algo}" disabled>Copy</button></td>`;
+    tbody.appendChild(tr);
+  });
+
+  async function computeAll() {
+    const raw = inputEl.value;
+    if (!raw) {
+      ALGOS.forEach(a => {
+        document.getElementById('val-'+a).textContent = '—';
+        document.getElementById('val-'+a).className = 'hash-value empty';
+        document.getElementById('copy-'+a).disabled = true;
+      });
+      charCount.textContent = '0 bytes';
+      return;
+    }
+
+    let bytes;
+    if (inputMode === 'hex') {
+      const clean = raw.replace(/\s+/g,'');
+      if (!/^[0-9a-fA-F]*$/.test(clean) || clean.length % 2 !== 0) {
+        charCount.textContent = 'invalid hex';
+        return;
+      }
+      bytes = new Uint8Array(clean.match(/.{2}/g).map(h => parseInt(h,16)));
+    } else {
+      bytes = new TextEncoder().encode(raw);
+    }
+
+    charCount.textContent = bytes.length + ' byte' + (bytes.length === 1 ? '' : 's');
+
+    // MD5 (sync, text-only — convert bytes back to latin1 string)
+    const latin1 = Array.from(bytes).map(b => String.fromCharCode(b)).join('');
+    setResult('MD5', md5(latin1));
+
+    // SHA family
+    for (const algo of ['SHA-1','SHA-256','SHA-384','SHA-512']) {
+      sha(algo, bytes).then(h => setResult(algo, h));
+    }
+  }
+
+  function setResult(algo, hash) {
+    const el = document.getElementById('val-'+algo);
+    el.textContent = hash;
+    el.className = 'hash-value';
+    const btn = document.getElementById('copy-'+algo);
+    btn.disabled = false;
+    btn.onclick = () => {
+      navigator.clipboard.writeText(hash);
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    };
+  }
+
+  inputEl.addEventListener('input', computeAll);
+
+  document.getElementById('btn-text').addEventListener('click', () => {
+    inputMode = 'text';
+    document.getElementById('btn-text').classList.add('active');
+    document.getElementById('btn-hex').classList.remove('active');
+    inputEl.placeholder = 'Type or paste text to hash…';
+    computeAll();
+  });
+  document.getElementById('btn-hex').addEventListener('click', () => {
+    inputMode = 'hex';
+    document.getElementById('btn-hex').classList.add('active');
+    document.getElementById('btn-text').classList.remove('active');
+    inputEl.placeholder = 'Paste hex bytes, e.g. 48656c6c6f';
+    computeAll();
+  });
+  </script>
+</body>
+</html>

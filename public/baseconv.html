@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Tools — Base Converter</title>
+  <link rel="stylesheet" href="/styles/main.css" />
+  <style>
+    .tool-section { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .input-group { display: flex; gap: 10px; align-items: stretch; margin-bottom: 28px; }
+    .base-input {
+      flex: 1; background: var(--bg-2); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 12px 14px; font-family: 'Courier New', monospace; font-size: 1rem;
+    }
+    .base-input:focus { outline: none; border-color: var(--accent); }
+    .base-input.error { border-color: #e55; }
+
+    .from-base-wrap { display: flex; align-items: center; gap: 8px; }
+    .from-label { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+    .base-select, .base-number-input {
+      background: var(--bg-3); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 10px 8px;
+      font-size: 0.9rem;
+    }
+    .base-select { min-width: 110px; }
+    .base-number-input { width: 70px; text-align: center; font-family: 'Courier New', monospace; }
+    .base-number-input:focus, .base-select:focus { outline: none; border-color: var(--accent); }
+
+    .error-msg { color: #e55; font-size: 0.8rem; margin-bottom: 16px; min-height: 1.2em; }
+
+    .results-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 12px;
+    }
+    .result-card {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .result-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .copy-btn {
+      background: var(--bg-3); border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 6px;
+      padding: 3px 9px; font-size: 0.72rem; cursor: pointer; transition: 0.15s;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+    .copy-btn.copied { border-color: #4caf50; color: #4caf50; }
+    .copy-btn:disabled { opacity: 0.3; cursor: default; }
+    .result-value {
+      font-family: 'Courier New', monospace; font-size: 0.85rem;
+      word-break: break-all; color: var(--text); line-height: 1.5;
+      min-height: 1.3em;
+    }
+    .result-value.empty { color: var(--text-muted); font-size: 0.85rem; font-family: inherit; }
+
+    .custom-base-row {
+      display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+    }
+    .custom-label { font-size: 0.85rem; color: var(--text-muted); }
+    .custom-card { grid-column: 1 / -1; border-color: #333; }
+    .custom-card .result-label::after { content: ' (custom)'; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand">🐙 Octopus Tools</a>
+      <nav>
+        <a href="/" class="nav-link">Home</a>
+        <a href="/speed-reader.html" class="nav-link">Speed Reader</a>
+        <a href="/hash.html" class="nav-link">Hash</a>
+        <a href="/baseconv.html" class="nav-link active">Base Conv</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Base Converter</h1>
+    <p class="tagline">Binary · Octal · Decimal · Hex · Any base</p>
+  </section>
+
+  <section class="tool-section">
+
+    <!-- Input -->
+    <div class="input-group">
+      <input class="base-input" id="numInput" type="text" placeholder="Enter a number…" spellcheck="false" autocomplete="off" />
+    </div>
+
+    <div class="from-base-wrap" style="margin-bottom: 16px;">
+      <span class="from-label">From base:</span>
+      <select class="base-select" id="fromSelect">
+        <option value="2">2 — Binary</option>
+        <option value="8">8 — Octal</option>
+        <option value="10" selected>10 — Decimal</option>
+        <option value="16">16 — Hex</option>
+        <option value="36">36 — Base36</option>
+        <option value="custom">Custom…</option>
+      </select>
+      <input class="base-number-input" id="fromCustom" type="number" min="2" max="36" value="10"
+             placeholder="2–36" style="display:none;" />
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- Standard outputs -->
+    <div class="results-grid" id="resultsGrid">
+      <div class="result-card" id="card-2">
+        <div class="result-header">
+          <span class="result-label">Binary (base 2)</span>
+          <button class="copy-btn" id="copy-2" disabled>Copy</button>
+        </div>
+        <div class="result-value empty" id="val-2">—</div>
+      </div>
+      <div class="result-card" id="card-8">
+        <div class="result-header">
+          <span class="result-label">Octal (base 8)</span>
+          <button class="copy-btn" id="copy-8" disabled>Copy</button>
+        </div>
+        <div class="result-value empty" id="val-8">—</div>
+      </div>
+      <div class="result-card" id="card-10">
+        <div class="result-header">
+          <span class="result-label">Decimal (base 10)</span>
+          <button class="copy-btn" id="copy-10" disabled>Copy</button>
+        </div>
+        <div class="result-value empty" id="val-10">—</div>
+      </div>
+      <div class="result-card" id="card-16">
+        <div class="result-header">
+          <span class="result-label">Hex (base 16)</span>
+          <button class="copy-btn" id="copy-16" disabled>Copy</button>
+        </div>
+        <div class="result-value empty" id="val-16">—</div>
+      </div>
+    </div>
+
+    <!-- Custom base output -->
+    <div class="custom-base-row">
+      <span class="custom-label">Custom output base:</span>
+      <input class="base-number-input" id="toCustomBase" type="number" min="2" max="36" value="32" placeholder="2–36" />
+      <div class="result-card custom-card" style="flex:1; margin-top:0;" id="card-custom">
+        <div class="result-header">
+          <span class="result-label">Base <span id="customBaseLabel">32</span></span>
+          <button class="copy-btn" id="copy-custom" disabled>Copy</button>
+        </div>
+        <div class="result-value empty" id="val-custom">—</div>
+      </div>
+    </div>
+
+  </section>
+
+  <footer class="site-footer">
+    <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
+  </footer>
+
+  <script>
+  const CHARS = '0123456789abcdefghijklmnopqrstuvwxyz';
+
+  function toBigInt(str, base) {
+    str = str.trim().toLowerCase();
+    if (!str) return null;
+    const neg = str[0] === '-';
+    if (neg) str = str.slice(1);
+    if (!str) return null;
+    let val = 0n;
+    const b = BigInt(base);
+    for (const ch of str) {
+      const d = CHARS.indexOf(ch);
+      if (d < 0 || d >= base) return null;
+      val = val * b + BigInt(d);
+    }
+    return neg ? -val : val;
+  }
+
+  function fromBigInt(val, base) {
+    if (val === 0n) return '0';
+    const neg = val < 0n;
+    if (neg) val = -val;
+    const b = BigInt(base);
+    let out = '';
+    while (val > 0n) {
+      out = CHARS[Number(val % b)] + out;
+      val /= b;
+    }
+    return neg ? '-' + out : out;
+  }
+
+  const numInput   = document.getElementById('numInput');
+  const fromSelect = document.getElementById('fromSelect');
+  const fromCustom = document.getElementById('fromCustom');
+  const errorMsg   = document.getElementById('errorMsg');
+  const toCustomBase = document.getElementById('toCustomBase');
+  const customBaseLabel = document.getElementById('customBaseLabel');
+
+  function getFromBase() {
+    return fromSelect.value === 'custom' ? parseInt(fromCustom.value) : parseInt(fromSelect.value);
+  }
+
+  function setResult(id, val) {
+    const el = document.getElementById('val-' + id);
+    const btn = document.getElementById('copy-' + id);
+    if (val === null) {
+      el.textContent = '—'; el.className = 'result-value empty';
+      btn.disabled = true;
+    } else {
+      el.textContent = val; el.className = 'result-value';
+      btn.disabled = false;
+      btn.onclick = () => {
+        navigator.clipboard.writeText(val);
+        btn.textContent = 'Copied!'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      };
+    }
+  }
+
+  function convert() {
+    const raw = numInput.value.trim();
+    const fromBase = getFromBase();
+
+    if (isNaN(fromBase) || fromBase < 2 || fromBase > 36) {
+      errorMsg.textContent = 'From base must be between 2 and 36.';
+      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
+      return;
+    }
+
+    if (!raw) {
+      errorMsg.textContent = '';
+      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
+      return;
+    }
+
+    numInput.classList.remove('error');
+    const val = toBigInt(raw, fromBase);
+
+    if (val === null) {
+      numInput.classList.add('error');
+      errorMsg.textContent = `"${raw}" contains characters invalid for base ${fromBase}.`;
+      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
+      return;
+    }
+
+    errorMsg.textContent = '';
+    numInput.classList.remove('error');
+
+    [2, 8, 10, 16].forEach(base => setResult(base, fromBigInt(val, base)));
+
+    const customBase = parseInt(toCustomBase.value);
+    if (!isNaN(customBase) && customBase >= 2 && customBase <= 36) {
+      customBaseLabel.textContent = customBase;
+      setResult('custom', fromBigInt(val, customBase));
+    } else {
+      setResult('custom', null);
+    }
+  }
+
+  numInput.addEventListener('input', convert);
+  fromSelect.addEventListener('change', () => {
+    fromCustom.style.display = fromSelect.value === 'custom' ? 'inline-block' : 'none';
+    convert();
+  });
+  fromCustom.addEventListener('input', convert);
+  toCustomBase.addEventListener('input', () => {
+    customBaseLabel.textContent = toCustomBase.value || '?';
+    convert();
+  });
+  </script>
+</body>
+</html>

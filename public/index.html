@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Tools</title>
+  <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="icon" href="/images/favicon.ico" />
+  <style>
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 24px;
+      max-width: 860px;
+      margin: 40px auto 80px;
+      padding: 0 20px;
+    }
+    .tool-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .tool-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .tool-card .icon { font-size: 2.5rem; margin-bottom: 14px; }
+    .tool-card h2 { font-size: 1.2rem; margin: 0 0 8px; }
+    .tool-card p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; margin: 0; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand">🐙 Octopus Tools</a>
+      <nav>
+        <a href="/" class="nav-link active">Home</a>
+        <a href="/speed-reader.html" class="nav-link">Speed Reader</a>
+        <a href="/hash.html" class="nav-link">Hash</a>
+        <a href="/baseconv.html" class="nav-link">Base Conv</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Octopus Tools</h1>
+    <p class="tagline">Browser-based utilities — no tracking, no server-side processing.</p>
+  </section>
+
+  <div class="tools-grid">
+
+    <a class="tool-card" href="/speed-reader.html">
+      <div class="icon">📖</div>
+      <h2>Speed Reader</h2>
+      <p>RSVP-style speed reader. Paste text or upload a PDF and read at up to 900+ WPM using the Optimal Recognition Point technique.</p>
+    </a>
+
+    <a class="tool-card" href="/hash.html">
+      <div class="icon">#️⃣</div>
+      <h2>Hash Generator</h2>
+      <p>Compute MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes instantly in your browser. Supports text and raw hex-byte input.</p>
+    </a>
+
+    <a class="tool-card" href="/baseconv.html">
+      <div class="icon">🔢</div>
+      <h2>Base Converter</h2>
+      <p>Convert numbers between binary, octal, decimal, hex, or any custom base up to 36. Handles arbitrarily large integers.</p>
+    </a>
+
+  </div>
+
+  <footer class="site-footer">
+    <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
+  </footer>
+
+</body>
+</html>

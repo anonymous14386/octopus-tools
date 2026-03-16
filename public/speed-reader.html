@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Tools — Speed Reader</title>
+  <link rel="stylesheet" href="/styles/main.css" />
+  <link rel="icon" href="/images/favicon.ico" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand">🐙 Octopus Tools</a>
+      <nav>
+        <a href="/" class="nav-link">Home</a>
+        <a href="/speed-reader.html" class="nav-link active">Speed Reader</a>
+        <a href="/hash.html" class="nav-link">Hash</a>
+        <a href="/baseconv.html" class="nav-link">Base Conv</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Speed Reader</h1>
+    <p class="tagline">Read faster. Train your brain.</p>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="content-section about-section">
+    <h2>What is RSVP Speed Reading?</h2>
+    <p>
+      RSVP (Rapid Serial Visual Presentation) is a scientifically-backed reading technique that displays
+      one word at a time in a fixed position, eliminating the need for eye movement across a page. By
+      anchoring your gaze on a single focal point — the highlighted red letter (the Optimal Recognition
+      Point, or ORP) — your brain can process text at dramatically higher speeds. With regular practice,
+      speeds of <strong>900+ WPM</strong> are achievable, compared to the average reading speed of around
+      250 WPM.
+    </p>
+    <div class="warning-box">
+      <strong>⚠️ Note:</strong> Math, science, and technical PDFs (equations, tables, code blocks) may
+      not parse cleanly — best results with novel-style or text-heavy documents.
+    </div>
+  </section>
+
+  <!-- HOW TO USE -->
+  <section class="content-section howto-section">
+    <h2>How to Use</h2>
+    <ol class="howto-list">
+      <li>Upload a PDF or text file, or paste text directly.</li>
+      <li>For PDFs: choose a chapter from the dropdown if chapters were detected.</li>
+      <li>Set your speed — start slow (150 WPM) and work up.</li>
+      <li>
+        Press Play. A single word appears at a time; your eye stays fixed on the
+        <span class="orp-example">red letter</span>.
+      </li>
+      <li>Use <strong>Save Text</strong> to keep the extracted text for future sessions.</li>
+    </ol>
+  </section>
+
+  <!-- APP -->
+  <section class="content-section" id="app">
+
+    <!-- INPUT TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="upload">📄 Upload File</button>
+      <button class="tab-btn" data-tab="paste">✏️ Paste Text</button>
+    </div>
+
+    <!-- UPLOAD PANEL -->
+    <div class="tab-panel" id="panel-upload">
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept=".pdf,.txt" />
+        <div class="dropzone-label">
+          <span class="dropzone-icon">📂</span>
+          <span>Drag &amp; drop a PDF or .txt file, or click to browse</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASTE PANEL -->
+    <div class="tab-panel hidden" id="panel-paste">
+      <textarea id="paste-area" placeholder="Paste your text here..."></textarea>
+      <button class="btn btn-primary" id="use-text-btn">Use This Text</button>
+    </div>
+
+    <!-- CHAPTER SELECTOR -->
+    <div id="chapter-section" class="chapter-section hidden">
+      <label for="chapter-select">Jump to Chapter:</label>
+      <div class="chapter-row">
+        <select id="chapter-select"></select>
+        <button class="btn btn-secondary" id="load-chapter-btn">Load Chapter</button>
+      </div>
+    </div>
+
+    <!-- SAVE BUTTON -->
+    <div id="save-section" class="save-section hidden">
+      <button class="btn btn-secondary" id="save-text-btn">💾 Save Extracted Text</button>
+    </div>
+
+    <!-- READER -->
+    <div id="reader-section" class="reader-section hidden">
+
+      <!-- ORP marker line above word display -->
+      <div class="orp-marker-wrap">
+        <div class="orp-marker-line"></div>
+      </div>
+
+      <!-- Word display -->
+      <div class="word-display-container">
+        <div class="word-display" id="word-display">
+          <span id="word-before"></span><span id="word-orp"></span><span id="word-after"></span>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-counter" id="progress-counter">Word 0 of 0</div>
+      </div>
+
+      <!-- Speed presets -->
+      <div class="speed-controls">
+        <div class="speed-presets">
+          <button class="speed-btn" data-wpm="150">🐢 150</button>
+          <button class="speed-btn active" data-wpm="300">🚶 300</button>
+          <button class="speed-btn" data-wpm="500">🏃 500</button>
+          <button class="speed-btn" data-wpm="800">⚡ 800</button>
+        </div>
+        <div class="custom-wpm">
+          <label for="custom-wpm-input">Custom WPM</label>
+          <input type="number" id="custom-wpm-input" min="50" max="2000" placeholder="e.g. 400" />
+          <button class="btn btn-secondary" id="set-wpm-btn">Set</button>
+        </div>
+        <div class="wpm-badge" id="wpm-badge">300 WPM</div>
+      </div>
+
+      <!-- Playback controls -->
+      <div class="playback-controls">
+        <button class="playback-btn" id="restart-btn" title="Restart">⏮</button>
+        <button class="playback-btn" id="back-btn" title="-50 words">⏪</button>
+        <button class="playback-btn play-pause-btn" id="play-pause-btn" title="Play/Pause">▶</button>
+        <button class="playback-btn" id="forward-btn" title="+50 words">⏩</button>
+      </div>
+
+    </div><!-- /reader-section -->
+
+  </section><!-- /app -->
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
+  </footer>
+
+  <script src="/scripts/main.js"></script>
+</body>
+</html>

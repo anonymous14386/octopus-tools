@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  octopus-tools:
+    build: .
+    container_name: octopus_tools_internal
+    restart: always
+    networks:
+      - web_proxy
+networks:
+  web_proxy:
+    external: true
