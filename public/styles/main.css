@@ -96,6 +96,52 @@ a:hover {
   background: var(--bg-3);
 }
 
+/* Mobile header.
+   .header-inner is a flex row that never wrapped, and the brand plus five nav
+   links are wider than a phone. That didn't just look cramped — it made the
+   whole document wider than the viewport, which is why the tool cards and hero
+   were cut off on the right too. One overflowing row drags every other section
+   with it.
+
+   Below 700px the brand sits on its own line and the nav becomes a single
+   horizontally scrollable strip, so it can never force the page wider again.
+   Note we do NOT use overflow-x:hidden as a backstop — clipping on an ancestor
+   silently breaks the sticky header. */
+@media (max-width: 700px) {
+  .site-header {
+    height: auto;
+    position: static;      /* a two-line sticky header eats too much of a phone screen */
+  }
+
+  .header-inner {
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 10px 16px;
+  }
+
+  .brand {
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+
+  .header-inner nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;          /* the strip is short; a scrollbar just adds noise */
+    -webkit-overflow-scrolling: touch;
+  }
+  .header-inner nav::-webkit-scrollbar { display: none; }
+
+  .nav-link {
+    white-space: nowrap;
+    padding: 6px 10px;
+  }
+}
+
 /* ===========================
    Hero
    =========================== */
