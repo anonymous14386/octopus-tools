@@ -1,0 +1,10 @@
+{
+  "name": "octopus-tools",
+  "private": true,
+  "description": "Hand-maintained static tool pages, served by nginx. No build step; see tools/stamp-assets.mjs.",
+  "scripts": {
+    "stamp": "node tools/stamp-assets.mjs",
+    "check": "node tools/stamp-assets.mjs --check",
+    "test": "node --test test/*.test.js"
+  }
+}
