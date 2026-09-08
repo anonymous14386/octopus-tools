@@ -5,62 +5,128 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Octopus Tools — Base Converter</title>
   <link rel="stylesheet" href="/styles/main.css?v=964ccf06" />
+  <link rel="icon" href="/images/favicon.ico" />
   <style>
-    .tool-section { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+    .tool-section { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
 
-    .input-group { display: flex; gap: 10px; align-items: stretch; margin-bottom: 28px; }
-    .base-input {
-      flex: 1; background: var(--bg-2); border: 1px solid var(--border);
-      color: var(--text); border-radius: var(--radius);
-      padding: 12px 14px; font-family: 'Courier New', monospace; font-size: 1rem;
-    }
-    .base-input:focus { outline: none; border-color: var(--accent); }
-    .base-input.error { border-color: #e55; }
-
-    .from-base-wrap { display: flex; align-items: center; gap: 8px; }
-    .from-label { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
-    .base-select, .base-number-input {
-      background: var(--bg-3); border: 1px solid var(--border);
-      color: var(--text); border-radius: 6px; padding: 10px 8px;
-      font-size: 0.9rem;
-    }
-    .base-select { min-width: 110px; }
-    .base-number-input { width: 70px; text-align: center; font-family: 'Courier New', monospace; }
-    .base-number-input:focus, .base-select:focus { outline: none; border-color: var(--accent); }
-
-    .error-msg { color: #e55; font-size: 0.8rem; margin-bottom: 16px; min-height: 1.2em; }
-
-    .results-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 12px;
-    }
-    .result-card {
+    .panel {
       background: var(--bg-2); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 14px 16px;
+      border-radius: var(--radius); padding: 18px 18px 20px; margin-bottom: 20px;
     }
-    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .result-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .panel > h2 {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--text-muted); font-weight: 600; margin-bottom: 14px;
+    }
+
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .row + .row { margin-top: 12px; }
+    .field-label { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+
+    .num-input {
+      flex: 1 1 240px; min-width: 0;
+      background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+      border-radius: var(--radius); padding: 13px 14px;
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 1.05rem; letter-spacing: 0.02em;
+    }
+    .num-input:focus { outline: none; border-color: var(--accent); }
+    .num-input.error { border-color: #e5533d; }
+
+    select, input[type="number"] {
+      background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 9px 8px; font-size: 0.9rem; font-family: inherit;
+    }
+    select:focus, input[type="number"]:focus { outline: none; border-color: var(--accent); }
+    input[type="number"] { width: 78px; text-align: center;
+      font-family: ui-monospace, 'Courier New', monospace; }
+    .hidden { display: none !important; }
+
+    .check { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; cursor: pointer; }
+    .check input { accent-color: var(--accent); width: 16px; height: 16px; }
+
+    .error-msg { color: #ff7a63; font-size: 0.86rem; margin: 14px 0 0; line-height: 1.5; }
+    .error-msg:empty { display: none; }
+    .note { color: var(--text-muted); font-size: 0.82rem; line-height: 1.55; margin-top: 10px; }
+
+    /* The answer */
+    .answer { border-color: #3a3a3a; }
+    .answer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+    .answer-value {
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 1.5rem; line-height: 1.45; word-break: break-all; color: var(--text);
+    }
+    .answer-value.placeholder { color: var(--text-muted); font-size: 1rem; font-family: inherit; }
+    .answer-sub { color: var(--text-muted); font-size: 0.82rem; margin-top: 8px; }
+
     .copy-btn {
-      background: var(--bg-3); border: 1px solid var(--border);
-      color: var(--text-muted); border-radius: 6px;
-      padding: 3px 9px; font-size: 0.72rem; cursor: pointer; transition: 0.15s;
+      background: var(--bg-3); border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 6px; padding: 4px 10px; font-size: 0.74rem; cursor: pointer;
+      transition: 0.15s; font-family: inherit; flex: none;
     }
-    .copy-btn:hover { border-color: var(--accent); color: var(--text); }
+    .copy-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
     .copy-btn.copied { border-color: #4caf50; color: #4caf50; }
     .copy-btn:disabled { opacity: 0.3; cursor: default; }
-    .result-value {
-      font-family: 'Courier New', monospace; font-size: 0.85rem;
-      word-break: break-all; color: var(--text); line-height: 1.5;
-      min-height: 1.3em;
-    }
-    .result-value.empty { color: var(--text-muted); font-size: 0.85rem; font-family: inherit; }
 
-    .custom-base-row {
-      display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+    /* The other bases */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+    .cell { background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px; padding: 11px 13px; }
+    .cell-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .cell-label { font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .cell-value {
+      font-family: ui-monospace, 'Courier New', monospace; font-size: 0.9rem;
+      word-break: break-all; line-height: 1.45; min-height: 1.3em;
     }
-    .custom-label { font-size: 0.85rem; color: var(--text-muted); }
-    .custom-card { grid-column: 1 / -1; border-color: #333; }
-    .custom-card .result-label::after { content: ' (custom)'; }
+    .cell-value.empty { color: var(--text-muted); }
+
+    /* The working */
+    .step { border-top: 1px solid var(--border); padding: 16px 0 4px; }
+    .step:first-of-type { border-top: none; padding-top: 4px; }
+    .step h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 9px; color: var(--text); }
+    .step pre {
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 0.84rem; line-height: 1.65; color: var(--text);
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 11px 13px; overflow-x: auto; max-height: 340px; overflow-y: auto;
+      white-space: pre; margin: 0;
+    }
+    .step .why { color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; margin-top: 8px; }
+
+    .warn {
+      border-left: 3px solid #d19a2c; background: rgba(209, 154, 44, 0.08);
+      padding: 9px 13px; border-radius: 0 6px 6px 0; font-size: 0.84rem;
+      color: #e5c07b; margin-bottom: 12px; line-height: 1.55;
+    }
+
+    /* Reference */
+    details { border-top: 1px solid var(--border); }
+    details summary {
+      cursor: pointer; padding: 14px 0; font-size: 0.92rem; font-weight: 600;
+      list-style: none; display: flex; align-items: center; gap: 8px;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before { content: '▸'; color: var(--accent); transition: transform 0.15s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    .formula {
+      font-family: ui-monospace, 'Courier New', monospace; font-size: 0.85rem;
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px 14px; margin: 8px 0 4px; overflow-x: auto; white-space: pre; line-height: 1.65;
+    }
+    .ref-body { padding-bottom: 16px; }
+    .ref-body p { color: var(--text-muted); font-size: 0.87rem; line-height: 1.65; margin: 10px 0; }
+    .ref-body strong { color: var(--text); }
+
+    table.pow { width: 100%; border-collapse: collapse; font-size: 0.84rem;
+      font-family: ui-monospace, 'Courier New', monospace; font-variant-numeric: tabular-nums; }
+    table.pow td { padding: 3px 10px 3px 0; border-bottom: 1px solid var(--border); }
+    table.pow td:first-child { color: var(--text-muted); width: 5em; }
+    table.pow td:nth-child(2) { text-align: right; padding-right: 18px; }
+    table.pow td:last-child { text-align: right; color: var(--text-muted); width: 9em; }
+    .pow-wrap { max-height: 300px; overflow-y: auto; }
+
+    @media (max-width: 560px) {
+      .num-input { flex-basis: 100%; }
+      .answer-value { font-size: 1.2rem; }
+    }
   </style>
 </head>
 <body>
@@ -73,81 +139,168 @@
         <a href="/speed-reader.html" class="nav-link">Speed Reader</a>
         <a href="/hash.html" class="nav-link">Hash</a>
         <a href="/baseconv.html" class="nav-link active">Base Conv</a>
+        <a href="/subnet.html" class="nav-link">Subnet</a>
+        <a href="/password-generator.html" class="nav-link">Password</a>
       </nav>
     </div>
   </header>
 
   <section class="hero">
     <h1>Base Converter</h1>
-    <p class="tagline">Binary · Octal · Decimal · Hex · Any base</p>
+    <p class="tagline">Any base 2–36, fractions, and two's complement — with the working shown.</p>
   </section>
 
   <section class="tool-section">
 
-    <!-- Input -->
-    <div class="input-group">
-      <input class="base-input" id="numInput" type="text" placeholder="Enter a number…" spellcheck="false" autocomplete="off" />
+    <div class="panel">
+      <h2>Input</h2>
+      <div class="row">
+        <input class="num-input" id="numInput" type="text" value="192" spellcheck="false"
+               autocomplete="off" autocapitalize="off" placeholder="A number, e.g. 1101 or DE:AD or -13.5" />
+      </div>
+      <div class="row">
+        <span class="field-label">From</span>
+        <select id="fromSelect">
+          <option value="2">2 — binary</option>
+          <option value="8">8 — octal</option>
+          <option value="10" selected>10 — decimal</option>
+          <option value="16">16 — hex</option>
+          <option value="36">36 — base 36</option>
+          <option value="custom">custom…</option>
+        </select>
+        <input id="fromCustom" type="number" min="2" max="36" value="12" class="hidden" />
+
+        <span class="field-label" style="margin-left:8px">to</span>
+        <select id="toSelect">
+          <option value="2" selected>2 — binary</option>
+          <option value="8">8 — octal</option>
+          <option value="10">10 — decimal</option>
+          <option value="16">16 — hex</option>
+          <option value="36">36 — base 36</option>
+          <option value="custom">custom…</option>
+        </select>
+        <input id="toCustom" type="number" min="2" max="36" value="12" class="hidden" />
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="signedBox" /> Two's complement, width</label>
+        <select id="widthSelect">
+          <option value="8" selected>8 bits</option>
+          <option value="16">16 bits</option>
+          <option value="32">32 bits</option>
+          <option value="64">64 bits</option>
+          <option value="custom">custom…</option>
+        </select>
+        <input id="widthCustom" type="number" min="2" max="512" value="12" class="hidden" />
+      </div>
+      <p class="note" id="signedNote"></p>
+      <p class="error-msg" id="errorMsg"></p>
     </div>
 
-    <div class="from-base-wrap" style="margin-bottom: 16px;">
-      <span class="from-label">From base:</span>
-      <select class="base-select" id="fromSelect">
-        <option value="2">2 — Binary</option>
-        <option value="8">8 — Octal</option>
-        <option value="10" selected>10 — Decimal</option>
-        <option value="16">16 — Hex</option>
-        <option value="36">36 — Base36</option>
-        <option value="custom">Custom…</option>
-      </select>
-      <input class="base-number-input" id="fromCustom" type="number" min="2" max="36" value="10"
-             placeholder="2–36" style="display:none;" />
+    <div class="panel answer">
+      <div class="answer-head">
+        <h2 style="margin:0" id="answerLabel">Answer</h2>
+        <button class="copy-btn" id="copyMain" disabled>Copy</button>
+      </div>
+      <div class="answer-value placeholder" id="answerValue">—</div>
+      <div class="answer-sub" id="answerSub"></div>
     </div>
 
-    <div class="error-msg" id="errorMsg"></div>
-
-    <!-- Standard outputs -->
-    <div class="results-grid" id="resultsGrid">
-      <div class="result-card" id="card-2">
-        <div class="result-header">
-          <span class="result-label">Binary (base 2)</span>
-          <button class="copy-btn" id="copy-2" disabled>Copy</button>
-        </div>
-        <div class="result-value empty" id="val-2">—</div>
-      </div>
-      <div class="result-card" id="card-8">
-        <div class="result-header">
-          <span class="result-label">Octal (base 8)</span>
-          <button class="copy-btn" id="copy-8" disabled>Copy</button>
-        </div>
-        <div class="result-value empty" id="val-8">—</div>
-      </div>
-      <div class="result-card" id="card-10">
-        <div class="result-header">
-          <span class="result-label">Decimal (base 10)</span>
-          <button class="copy-btn" id="copy-10" disabled>Copy</button>
-        </div>
-        <div class="result-value empty" id="val-10">—</div>
-      </div>
-      <div class="result-card" id="card-16">
-        <div class="result-header">
-          <span class="result-label">Hex (base 16)</span>
-          <button class="copy-btn" id="copy-16" disabled>Copy</button>
-        </div>
-        <div class="result-value empty" id="val-16">—</div>
-      </div>
+    <div class="panel">
+      <h2>The same value in the usual bases</h2>
+      <div class="grid" id="grid"></div>
     </div>
 
-    <!-- Custom base output -->
-    <div class="custom-base-row">
-      <span class="custom-label">Custom output base:</span>
-      <input class="base-number-input" id="toCustomBase" type="number" min="2" max="36" value="32" placeholder="2–36" />
-      <div class="result-card custom-card" style="flex:1; margin-top:0;" id="card-custom">
-        <div class="result-header">
-          <span class="result-label">Base <span id="customBaseLabel">32</span></span>
-          <button class="copy-btn" id="copy-custom" disabled>Copy</button>
+    <div class="panel" id="workingPanel">
+      <h2>The working</h2>
+      <div id="warnings"></div>
+      <div id="steps"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Reference</h2>
+
+      <details open>
+        <summary>The two procedures</summary>
+        <div class="ref-body">
+          <p><strong>Base b → decimal.</strong> Positional expansion: every digit is worth its face
+             value times the base raised to its position, counting from 0 at the right.</p>
+          <div class="formula">N₁₀ = Σ dᵢ × b^i          for i = 0 … n−1
+
+1101₂ = 1×2³ + 1×2² + 0×2¹ + 1×2⁰
+      = 8 + 4 + 0 + 1
+      = 13</div>
+          <p><strong>Decimal → base b.</strong> Repeated division. Divide by b, write down the
+             remainder, repeat on the quotient until it reaches 0 — then read the remainders
+             <em>upward</em>.</p>
+          <div class="formula">13 ÷ 2 = 6  r 1   ↑
+ 6 ÷ 2 = 3  r 0   │  read
+ 3 ÷ 2 = 1  r 1   │  upward
+ 1 ÷ 2 = 0  r 1   │      → 1101₂</div>
+          <p><strong>The fraction.</strong> Repeated multiplication, the mirror image. Multiply by b,
+             take the whole part as the next digit, repeat on what is left — and read
+             <em>downward</em>.</p>
+          <div class="formula">0.625 × 2 = 1.25  → 1
+0.250 × 2 = 0.50  → 0
+0.500 × 2 = 1.00  → 1   → .101₂</div>
         </div>
-        <div class="result-value empty" id="val-custom">—</div>
-      </div>
+      </details>
+
+      <details>
+        <summary>The shortcut, and when it applies</summary>
+        <div class="ref-body">
+          <p>When <strong>both bases are powers of two</strong>, do not go via decimal. The bits line
+             up: three to an octal digit, four to a hex digit. Group them and read off.</p>
+          <div class="formula">1101 1010₂  →  D A₁₆        (no arithmetic at all)
+ 111 101 101₂ →  7 5 5₈</div>
+          <p>This is the method networking uses on a MAC address and on every IPv6 field, and it is
+             what an exam is asking for when it says "convert". Going via decimal gets the same
+             answer with working nobody uses.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Two's complement</summary>
+        <div class="ref-body">
+          <p>A negative number has no minus sign in a register — it has a <strong>width</strong> and a
+             pattern. At width n:</p>
+          <div class="formula">encode:  P = 2ⁿ + x          for x &lt; 0
+decode:  x = P − 2ⁿ      if the top bit is set
+              P          otherwise
+range:   −2ⁿ⁻¹  …  2ⁿ⁻¹ − 1</div>
+          <p>Invert-and-add-one is the same operation, and it is the one written by hand:</p>
+          <div class="formula">-13 at 8 bits
+  13     = 0000 1101
+  invert = 1111 0010     (one's complement)
+  add 1  = 1111 0011     → 0xF3
+  check:   256 + (−13) = 243 = 0xF3 ✓</div>
+          <p>The same eight bits are <strong>243 unsigned and −13 signed</strong>. Nothing in the bits
+             says which — the width and the mode do. Above, decimal is the value and every other base
+             shows the stored pattern.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Powers of two</summary>
+        <div class="ref-body">
+          <p>The table you end up memorising. 2¹⁰ is the one to anchor on; every subnet mask and
+             every host count comes off it.</p>
+          <div class="pow-wrap"><table class="pow" id="powTable"></table></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>What this accepts</summary>
+        <div class="ref-body">
+          <p>Prefixes <code>0b</code> <code>0o</code> <code>0d</code> <code>0x</code>, and the
+             separators <code>_</code>, spaces and <code>:</code> anywhere — plus <code>-</code>
+             inside a hex number, because MAC addresses are written <code>00-1B-44</code>.</p>
+          <p>Digits are <code>0-9</code> then <code>A-Z</code>, which runs out at base 36. Anything
+             above that needs a bracket notation like <code>[12].[35].[7]</code>, which is a
+             different tool, so this one refuses rather than inventing one.</p>
+          <p>A digit that does not belong to the base is <strong>named, with its position</strong>,
+             instead of being quietly parsed into something else.</p>
+        </div>
+      </details>
     </div>
 
   </section>
@@ -156,116 +309,127 @@
     <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
   </footer>
 
+  <script src="/scripts/bases.js?v=6b694f8d"></script>
   <script>
-  const CHARS = '0123456789abcdefghijklmnopqrstuvwxyz';
+  (function () {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const numInput = $('numInput'), fromSelect = $('fromSelect'), fromCustom = $('fromCustom'),
+          toSelect = $('toSelect'), toCustom = $('toCustom'), signedBox = $('signedBox'),
+          widthSelect = $('widthSelect'), widthCustom = $('widthCustom');
 
-  function toBigInt(str, base) {
-    str = str.trim().toLowerCase();
-    if (!str) return null;
-    const neg = str[0] === '-';
-    if (neg) str = str.slice(1);
-    if (!str) return null;
-    let val = 0n;
-    const b = BigInt(base);
-    for (const ch of str) {
-      const d = CHARS.indexOf(ch);
-      if (d < 0 || d >= base) return null;
-      val = val * b + BigInt(d);
-    }
-    return neg ? -val : val;
-  }
+    const NAMES = { 2: 'binary', 8: 'octal', 10: 'decimal', 16: 'hex' };
+    const label = b => `Base ${b}${NAMES[b] ? ' — ' + NAMES[b] : ''}`;
 
-  function fromBigInt(val, base) {
-    if (val === 0n) return '0';
-    const neg = val < 0n;
-    if (neg) val = -val;
-    const b = BigInt(base);
-    let out = '';
-    while (val > 0n) {
-      out = CHARS[Number(val % b)] + out;
-      val /= b;
-    }
-    return neg ? '-' + out : out;
-  }
+    const pick = (sel, custom) => sel.value === 'custom' ? parseInt(custom.value, 10) : parseInt(sel.value, 10);
 
-  const numInput   = document.getElementById('numInput');
-  const fromSelect = document.getElementById('fromSelect');
-  const fromCustom = document.getElementById('fromCustom');
-  const errorMsg   = document.getElementById('errorMsg');
-  const toCustomBase = document.getElementById('toCustomBase');
-  const customBaseLabel = document.getElementById('customBaseLabel');
-
-  function getFromBase() {
-    return fromSelect.value === 'custom' ? parseInt(fromCustom.value) : parseInt(fromSelect.value);
-  }
-
-  function setResult(id, val) {
-    const el = document.getElementById('val-' + id);
-    const btn = document.getElementById('copy-' + id);
-    if (val === null) {
-      el.textContent = '—'; el.className = 'result-value empty';
-      btn.disabled = true;
-    } else {
-      el.textContent = val; el.className = 'result-value';
-      btn.disabled = false;
-      btn.onclick = () => {
-        navigator.clipboard.writeText(val);
-        btn.textContent = 'Copied!'; btn.classList.add('copied');
-        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    function copyable(btn, text) {
+      btn.disabled = !text;
+      btn.onclick = !text ? null : () => {
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = 'Copied'; btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1400);
+        }, () => { btn.textContent = 'Press ⌘C'; });
       };
     }
-  }
 
-  function convert() {
-    const raw = numInput.value.trim();
-    const fromBase = getFromBase();
-
-    if (isNaN(fromBase) || fromBase < 2 || fromBase > 36) {
-      errorMsg.textContent = 'From base must be between 2 and 36.';
-      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
-      return;
+    function clearOut(message) {
+      $('answerValue').textContent = '—';
+      $('answerValue').className = 'answer-value placeholder';
+      $('answerSub').textContent = '';
+      copyable($('copyMain'), '');
+      $('grid').innerHTML = '';
+      $('steps').innerHTML = '';
+      $('warnings').innerHTML = '';
+      $('workingPanel').classList.add('hidden');
+      $('errorMsg').textContent = message || '';
+      numInput.classList.toggle('error', !!message);
     }
 
-    if (!raw) {
-      errorMsg.textContent = '';
-      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
-      return;
+    function render() {
+      const from = pick(fromSelect, fromCustom), to = pick(toSelect, toCustom);
+      const signed = signedBox.checked;
+      const width = pick(widthSelect, widthCustom);
+
+      $('signedNote').textContent = signed
+        ? `Decimal shows the value; every other base shows the ${width}-bit pattern actually stored. ` +
+          `Range −${Math.pow(2, Math.min(width, 53) - 1)} … ${Math.pow(2, Math.min(width, 53) - 1) - 1}` +
+          (width > 53 ? ' (approximate above 53 bits — the converter itself is exact).' : '.')
+        : '';
+
+      if (!numInput.value.trim()) { clearOut(''); return; }
+
+      const r = Bases.convert(numInput.value, { fromBase: from, toBase: to, signed, width });
+      if (!r.ok) { clearOut(r.error.message); return; }
+
+      numInput.classList.remove('error');
+      $('errorMsg').textContent = '';
+      $('workingPanel').classList.remove('hidden');
+
+      $('answerLabel').textContent = `${label(from)} → ${label(to)}`;
+      $('answerValue').textContent = r.grouped;
+      $('answerValue').className = 'answer-value';
+      copyable($('copyMain'), r.digits);
+      $('answerSub').textContent =
+        (r.grouped !== r.digits ? `unspaced: ${r.digits}   ·   ` : '') +
+        `decimal ${r.decimal}` +
+        (r.repeating ? '   ·   the bracketed digits repeat forever' : '') +
+        (signed ? `   ·   read as the ${r.interpretation === 'value' ? 'value' : `${width}-bit pattern`}` : '');
+
+      // The usual bases, without the working — the working belongs to the one
+      // conversion you chose, or every panel is a wall of division tables.
+      const cells = [];
+      for (const base of [2, 8, 10, 16]) {
+        const c = Bases.convert(numInput.value, { fromBase: from, toBase: base, signed, width, steps: false });
+        cells.push({ base, text: c.ok ? c.grouped : '—', raw: c.ok ? c.digits : '' });
+      }
+      $('grid').innerHTML = cells.map((c, i) =>
+        `<div class="cell"><div class="cell-head"><span class="cell-label">${label(c.base)}</span>` +
+        `<button class="copy-btn" data-i="${i}" ${c.raw ? '' : 'disabled'}>Copy</button></div>` +
+        `<div class="cell-value${c.raw ? '' : ' empty'}"></div></div>`).join('');
+      [...$('grid').querySelectorAll('.cell-value')].forEach((el, i) => { el.textContent = cells[i].text; });
+      [...$('grid').querySelectorAll('.copy-btn')].forEach(btn => copyable(btn, cells[+btn.dataset.i].raw));
+
+      $('warnings').innerHTML = '';
+      for (const w of r.warnings) {
+        const d = document.createElement('div'); d.className = 'warn'; d.textContent = w;
+        $('warnings').appendChild(d);
+      }
+
+      $('steps').innerHTML = '';
+      for (const s of r.steps) {
+        const wrap = document.createElement('div'); wrap.className = 'step';
+        const h = document.createElement('h3'); h.textContent = s.title; wrap.appendChild(h);
+        const pre = document.createElement('pre'); pre.textContent = s.lines.join('\n'); wrap.appendChild(pre);
+        if (s.note) { const p = document.createElement('p'); p.className = 'why'; p.textContent = s.note; wrap.appendChild(p); }
+        $('steps').appendChild(wrap);
+      }
+      if (!r.steps.length) $('steps').innerHTML =
+        '<div class="step"><p class="why">Same base in and out — there is nothing to do.</p></div>';
     }
 
-    numInput.classList.remove('error');
-    const val = toBigInt(raw, fromBase);
-
-    if (val === null) {
-      numInput.classList.add('error');
-      errorMsg.textContent = `"${raw}" contains characters invalid for base ${fromBase}.`;
-      [2, 8, 10, 16, 'custom'].forEach(id => setResult(id, null));
-      return;
+    function syncCustoms() {
+      fromCustom.classList.toggle('hidden', fromSelect.value !== 'custom');
+      toCustom.classList.toggle('hidden', toSelect.value !== 'custom');
+      widthCustom.classList.toggle('hidden', widthSelect.value !== 'custom');
+      widthSelect.disabled = !signedBox.checked;
+      widthCustom.disabled = !signedBox.checked;
     }
 
-    errorMsg.textContent = '';
-    numInput.classList.remove('error');
+    for (const el of [numInput, fromCustom, toCustom, widthCustom])
+      el.addEventListener('input', render);
+    for (const el of [fromSelect, toSelect, widthSelect, signedBox])
+      el.addEventListener('change', () => { syncCustoms(); render(); });
 
-    [2, 8, 10, 16].forEach(base => setResult(base, fromBigInt(val, base)));
+    // The powers-of-two table is generated, not typed — a hand-written one is a
+    // list of 33 chances to make a typo in the reference people trust.
+    $('powTable').innerHTML = Bases.powersOfTwo(0, 32).map(r =>
+      `<tr><td>2^${r.n}</td><td>${r.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')}</td>` +
+      `<td>${r.n % 10 === 0 && r.n ? ['', '1 Ki', '1 Mi', '1 Gi'][r.n / 10] || '' : ''}</td></tr>`).join('');
 
-    const customBase = parseInt(toCustomBase.value);
-    if (!isNaN(customBase) && customBase >= 2 && customBase <= 36) {
-      customBaseLabel.textContent = customBase;
-      setResult('custom', fromBigInt(val, customBase));
-    } else {
-      setResult('custom', null);
-    }
-  }
-
-  numInput.addEventListener('input', convert);
-  fromSelect.addEventListener('change', () => {
-    fromCustom.style.display = fromSelect.value === 'custom' ? 'inline-block' : 'none';
-    convert();
-  });
-  fromCustom.addEventListener('input', convert);
-  toCustomBase.addEventListener('input', () => {
-    customBaseLabel.textContent = toCustomBase.value || '?';
-    convert();
-  });
+    syncCustoms();
+    render();
+  })();
   </script>
 </body>
 </html>

@@ -102,3 +102,63 @@ test('HTML is still never cached — it is what points at the stamped URLs', () 
   assert.ok(at > 0, 'no HTML cache rule');
   assert.match(conf.slice(at, conf.indexOf('}', at)), /Cache-Control "no-cache"/);
 });
+
+/**
+ * The stamper versions href and src attributes in HTML. It cannot version a
+ * module's import specifiers, because they live inside the JS. A static
+ * `import './bases.js'` resolves against the importer's URL WITHOUT its query
+ * string, so the imported file keeps coming from Cloudflare's four-hour cache
+ * after a deploy — one stale sibling, looking exactly like a deploy that never
+ * landed. octopus-ee hit that and had to version the whole directory.
+ *
+ * So the shared modules here are classic scripts with no import graph, and this
+ * is the guard that keeps them that way. Delete it and the failure returns
+ * silently, four hours at a time.
+ */
+test('no script in public/scripts imports a sibling — the stamper cannot version that', () => {
+  const dir = path.join(pub, 'scripts');
+  const offenders = [];
+  for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.js'))) {
+    const src = fs.readFileSync(path.join(dir, f), 'utf8');
+    if (/^\s*import\s.+from\s+['"]/m.test(src) || /\bfrom\s+['"]\.\.?\//.test(src))
+      offenders.push(f);
+  }
+  assert.deepEqual(offenders, [],
+    'these use ES module imports, whose specifiers cannot carry a ?v= stamp — ' +
+    'load each file from the page instead and let it assign a global');
+});
+
+test('the shared modules load in Node as well as the browser, so they can be tested', () => {
+  // A module the tests cannot require is a module with no tests. Both of these
+  // assign module.exports under Node and a global in a browser.
+  for (const f of ['bases.js', 'ipv4.js']) {
+    const src = fs.readFileSync(path.join(pub, 'scripts', f), 'utf8');
+    assert.match(src, /module\.exports/, `${f} cannot be required by a test`);
+    assert.match(src, /global\.\w+ = API/, `${f} exposes nothing to the page`);
+  }
+});
+
+test('every page lists every other page in its nav', () => {
+  // The navs drifted apart on their own: before the subnet page existed,
+  // hash.html and speed-reader.html had already lost the link to the password
+  // generator, so two of five pages were unreachable from two others. Nobody
+  // noticed, because a missing link looks like nothing.
+  const expected = pages.map(p => (p === 'index.html' ? '/' : '/' + p)).sort();
+  for (const page of pages) {
+    const html = fs.readFileSync(path.join(pub, page), 'utf8');
+    const nav  = /<nav>([\s\S]*?)<\/nav>/.exec(html);
+    assert.ok(nav, `${page} has no nav`);
+    const hrefs = [...nav[1].matchAll(/href="([^"]+)"/g)].map(m => m[1]).sort();
+    assert.deepEqual(hrefs, expected, `${page}'s nav does not list every page`);
+  }
+});
+
+test('exactly one nav link on each page is marked as the current one', () => {
+  for (const page of pages) {
+    const html = fs.readFileSync(path.join(pub, page), 'utf8');
+    const nav  = /<nav>([\s\S]*?)<\/nav>/.exec(html)[1];
+    const here = page === 'index.html' ? '/' : '/' + page;
+    const active = [...nav.matchAll(/href="([^"]+)" class="nav-link active"/g)].map(m => m[1]);
+    assert.deepEqual(active, [here], `${page} highlights ${active.join(', ') || 'nothing'}`);
+  }
+});

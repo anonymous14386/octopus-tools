@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Tools — Subnet Calculator</title>
+  <link rel="stylesheet" href="/styles/main.css?v=964ccf06" />
+  <link rel="icon" href="/images/favicon.ico" />
+  <style>
+    .tool-section { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    .panel {
+      background: var(--bg-2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 18px 20px; margin-bottom: 20px;
+    }
+    .panel > h2 {
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--text-muted); font-weight: 600; margin-bottom: 14px;
+    }
+
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .row + .row { margin-top: 12px; }
+    .field-label { color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+
+    .cidr-input {
+      flex: 1 1 260px; min-width: 0;
+      background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+      border-radius: var(--radius); padding: 13px 14px;
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 1.05rem; letter-spacing: 0.02em;
+    }
+    .cidr-input:focus { outline: none; border-color: var(--accent); }
+    .cidr-input.error { border-color: #e5533d; }
+
+    input[type="range"] { flex: 1 1 200px; accent-color: var(--accent); }
+    select, input[type="number"] {
+      background: var(--bg-3); border: 1px solid var(--border); color: var(--text);
+      border-radius: 6px; padding: 9px 8px; font-size: 0.9rem; font-family: inherit;
+    }
+    input[type="number"] { width: 92px; text-align: center;
+      font-family: ui-monospace, 'Courier New', monospace; }
+    select:focus, input[type="number"]:focus { outline: none; border-color: var(--accent); }
+    .prefix-badge {
+      font-family: ui-monospace, 'Courier New', monospace; font-size: 1rem;
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 12px; min-width: 4.2em; text-align: center; color: var(--accent);
+    }
+
+    .error-msg { color: #ff7a63; font-size: 0.86rem; margin: 14px 0 0; line-height: 1.5; }
+    .error-msg:empty { display: none; }
+    .hidden { display: none !important; }
+
+    /* Facts */
+    .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .fact { background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px; padding: 11px 13px; }
+    .fact .k { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .fact .v {
+      font-family: ui-monospace, 'Courier New', monospace; font-size: 1rem; margin-top: 4px;
+      word-break: break-all; font-variant-numeric: tabular-nums;
+    }
+    .fact.wide { grid-column: 1 / -1; }
+    .fact .v.muted { color: var(--text-muted); font-size: 0.88rem; }
+
+    .flag {
+      border-left: 3px solid #d19a2c; background: rgba(209, 154, 44, 0.08);
+      padding: 9px 13px; border-radius: 0 6px 6px 0; font-size: 0.84rem;
+      color: #e5c07b; margin-bottom: 12px; line-height: 1.55;
+    }
+    .flag.info { border-left-color: var(--accent); background: rgba(200, 75, 49, 0.08); color: #f0a894; }
+
+    /* Working */
+    .step { border-top: 1px solid var(--border); padding: 16px 0 4px; }
+    .step:first-of-type { border-top: none; padding-top: 4px; }
+    .step h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 9px; }
+    .step pre {
+      font-family: ui-monospace, 'Cascadia Code', 'Courier New', monospace;
+      font-size: 0.8rem; line-height: 1.7; background: var(--bg-3);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 11px 13px; overflow-x: auto; white-space: pre; margin: 0;
+    }
+    .step .why { color: var(--text-muted); font-size: 0.82rem; line-height: 1.6; margin-top: 8px; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; max-height: 380px; overflow-y: auto; }
+    table.data { width: 100%; border-collapse: collapse; font-size: 0.83rem;
+      font-family: ui-monospace, 'Courier New', monospace; font-variant-numeric: tabular-nums; }
+    table.data th {
+      text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted); font-weight: 600; padding: 0 12px 7px 0;
+      position: sticky; top: 0; background: var(--bg-2); font-family: system-ui, sans-serif;
+    }
+    table.data td { padding: 4px 12px 4px 0; border-top: 1px solid var(--border); white-space: nowrap; }
+    table.data td:first-child { color: var(--text-muted); }
+
+    details { border-top: 1px solid var(--border); }
+    details summary {
+      cursor: pointer; padding: 14px 0; font-size: 0.92rem; font-weight: 600;
+      list-style: none; display: flex; align-items: center; gap: 8px;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::before { content: '▸'; color: var(--accent); transition: transform 0.15s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    .ref-body { padding-bottom: 16px; }
+    .ref-body p { color: var(--text-muted); font-size: 0.87rem; line-height: 1.65; margin: 10px 0; }
+    .ref-body strong { color: var(--text); }
+    .formula {
+      font-family: ui-monospace, 'Courier New', monospace; font-size: 0.85rem;
+      background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px 14px; margin: 8px 0 4px; overflow-x: auto; white-space: pre; line-height: 1.65;
+    }
+    .result-line { font-family: ui-monospace, 'Courier New', monospace; font-size: 0.95rem; margin-top: 12px; }
+    .result-line .muted { color: var(--text-muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="/" class="brand">🐙 Octopus Tools</a>
+      <nav>
+        <a href="/" class="nav-link">Home</a>
+        <a href="/speed-reader.html" class="nav-link">Speed Reader</a>
+        <a href="/hash.html" class="nav-link">Hash</a>
+        <a href="/baseconv.html" class="nav-link">Base Conv</a>
+        <a href="/subnet.html" class="nav-link active">Subnet</a>
+        <a href="/password-generator.html" class="nav-link">Password</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Subnet Calculator</h1>
+    <p class="tagline">IPv4 — the mask, the borrow, the block, and where the boundaries fall.</p>
+  </section>
+
+  <section class="tool-section">
+
+    <div class="panel">
+      <h2>Address</h2>
+      <div class="row">
+        <input class="cidr-input" id="cidrInput" type="text" value="192.168.1.130/26" spellcheck="false"
+               autocomplete="off" autocapitalize="off" placeholder="192.168.1.130/26  or  192.168.1.130 255.255.255.192" />
+      </div>
+      <div class="row">
+        <span class="field-label">Prefix</span>
+        <span class="prefix-badge" id="prefixBadge">/26</span>
+        <input type="range" id="prefixRange" min="0" max="32" value="26" />
+      </div>
+      <p class="error-msg" id="errorMsg"></p>
+    </div>
+
+    <div class="panel" id="factsPanel">
+      <h2>The block</h2>
+      <div id="flags"></div>
+      <div class="facts" id="facts"></div>
+    </div>
+
+    <div class="panel" id="workingPanel">
+      <h2>The working</h2>
+      <div id="steps"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Cut it up</h2>
+      <div class="row">
+        <span class="field-label">Divide this block into</span>
+        <select id="newPrefix"></select>
+        <span class="field-label" id="cutSummary"></span>
+      </div>
+      <p class="error-msg" id="cutError"></p>
+      <div class="table-wrap" style="margin-top:14px"><table class="data" id="cutTable"></table></div>
+    </div>
+
+    <div class="panel">
+      <h2>Work backwards</h2>
+      <div class="row">
+        <span class="field-label">I need room for</span>
+        <input type="number" id="hostsNeeded" min="1" value="500" />
+        <span class="field-label">hosts</span>
+      </div>
+      <p class="error-msg" id="hostsError"></p>
+      <div class="result-line" id="hostsResult"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Reference</h2>
+
+      <details open>
+        <summary>The formulas</summary>
+        <div class="ref-body">
+          <div class="formula">mask       = 2³² − 2³²⁻ᵖ
+network    = address AND mask
+wildcard   = NOT mask
+broadcast  = network OR wildcard
+hosts      = 2³²⁻ᵖ − 2          (see /31 and /32 below)
+host range = network+1  …  broadcast−1</div>
+          <p><strong>The borrow.</strong> The bits the prefix takes past the octet boundary are worth
+             128, 64, 32 … in that octet, which is where every mask value comes from — and the
+             <strong>block size</strong> is 256 minus that.</p>
+          <div class="formula">/26 → 255.255.255.192
+      11111111.11111111.11111111.11000000
+                                  ^^ 2 bits borrowed, 6 host bits
+                                     192 = 128 + 64, block size 64
+                                     boundaries at .0  .64  .128  .192</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>The two prefixes the formula gets wrong</summary>
+        <div class="ref-body">
+          <p><strong>/31 has 2 usable addresses, not 0.</strong> RFC 3021: on a point-to-point link
+             there is nobody to broadcast to, so both addresses go to the two ends. This is what
+             router-to-router links are numbered with, so it is the common case, not an edge case.</p>
+          <p><strong>/32 has 1, not −1.</strong> It is a single host route — a loopback, a
+             <code>/32</code> in a routing table — not a network at all.</p>
+          <p>2³²⁻ᵖ − 2 gives 0 and −1 for those two. A calculator that prints them has not been
+             used on real equipment.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Ranges worth recognising</summary>
+        <div class="ref-body">
+          <div class="formula">10.0.0.0/8        private        RFC 1918
+172.16.0.0/12     private        RFC 1918   ← stops at 172.31.255.255
+192.168.0.0/16    private        RFC 1918
+100.64.0.0/10     carrier NAT    RFC 6598
+169.254.0.0/16    link-local     APIPA, "no DHCP answered"
+127.0.0.0/8       loopback       never leaves the host</div>
+          <p>The <strong>172.16.0.0/12</strong> one catches people: it runs to 172.31.255.255, not to
+             172.16.255.255 and not to 172.255.255.255. The dotted notation hides where a /12 ends.</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>Every prefix and its mask</summary>
+        <div class="ref-body">
+          <div class="table-wrap"><table class="data" id="maskTable"></table></div>
+        </div>
+      </details>
+    </div>
+
+  </section>
+
+  <footer class="site-footer">
+    <a href="https://octopustechnology.net" target="_blank" rel="noopener">Octopus Technology</a>
+  </footer>
+
+  <script src="/scripts/ipv4.js?v=2277c7d1"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const cidrInput = $('cidrInput'), prefixRange = $('prefixRange'), newPrefix = $('newPrefix');
+    let current = null;
+
+    const commas = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    function fact(k, v, opts) {
+      return `<div class="fact${opts && opts.wide ? ' wide' : ''}"><div class="k">${k}</div>` +
+             `<div class="v${opts && opts.muted ? ' muted' : ''}">${v}</div></div>`;
+    }
+
+    function showError(msg) {
+      $('errorMsg').textContent = msg;
+      cidrInput.classList.add('error');
+      $('factsPanel').classList.add('hidden');
+      $('workingPanel').classList.add('hidden');
+      current = null;
+      renderCut();
+    }
+
+    function render() {
+      const r = IPv4.subnet(cidrInput.value);
+      if (!r.ok) { showError(r.error); return; }
+
+      current = r;
+      cidrInput.classList.remove('error');
+      $('errorMsg').textContent = '';
+      $('factsPanel').classList.remove('hidden');
+      $('workingPanel').classList.remove('hidden');
+
+      prefixRange.value = r.prefix;
+      $('prefixBadge').textContent = '/' + r.prefix;
+
+      const flags = [];
+      if (r.isNetworkAddress)
+        flags.push(['', `${r.input} is the network address of this block — it names the block, ` +
+                        `so it is not assignable to a host.`]);
+      if (r.isBroadcastAddress)
+        flags.push(['', `${r.input} is the broadcast address of this block — not assignable either.`]);
+      if (r.special) flags.push(['info', `${r.special.cidr} — ${r.special.what}.`]);
+      $('flags').innerHTML = flags.map(([cls, text]) =>
+        `<div class="flag ${cls}"></div>`).join('');
+      [...$('flags').children].forEach((el, i) => { el.textContent = flags[i][1]; });
+
+      $('facts').innerHTML = [
+        fact('Network', `${r.network}/${r.prefix}`),
+        fact('Broadcast', r.broadcast || `none — ${r.shape}`, { muted: !r.broadcast }),
+        fact('First host', r.firstHost),
+        fact('Last host', r.lastHost),
+        fact('Usable hosts', commas(r.usable)),
+        fact('Addresses in block', commas(r.total)),
+        fact('Subnet mask', r.mask),
+        fact('Wildcard', r.wildcard),
+        fact('Class (historical)', `${r.klass} — ${r.klassNote}`, { muted: true }),
+        fact('Host bits', `${r.hostBits}  (2^${r.hostBits} = ${commas(r.total)})`, { muted: true }),
+        fact('Binary', `${r.binary.address}\n${r.binary.mask}`, { wide: true, muted: true })
+      ].join('');
+      // Textual, not innerHTML — an address is data and never markup.
+      const binCell = $('facts').querySelector('.fact.wide .v');
+      binCell.style.whiteSpace = 'pre';
+      binCell.style.fontSize = '0.8rem';
+      binCell.textContent = `${r.binary.address}   address\n${r.binary.mask}   mask\n` +
+                            `${IPv4.markPrefix(r.prefix, '─')}   ${r.prefix} network bits`;
+
+      $('steps').innerHTML = '';
+      for (const s of r.steps) {
+        const wrap = document.createElement('div'); wrap.className = 'step';
+        const h = document.createElement('h3'); h.textContent = s.title; wrap.appendChild(h);
+        const pre = document.createElement('pre'); pre.textContent = s.lines.join('\n'); wrap.appendChild(pre);
+        if (s.note) { const p = document.createElement('p'); p.className = 'why'; p.textContent = s.note; wrap.appendChild(p); }
+        $('steps').appendChild(wrap);
+      }
+
+      syncCutOptions();
+      renderCut();
+    }
+
+    function syncCutOptions() {
+      if (!current) return;
+      const keep = Number(newPrefix.value);
+      const opts = [];
+      for (let p = current.prefix + 1; p <= 32; p++) opts.push(p);
+      newPrefix.innerHTML = opts.map(p =>
+        `<option value="${p}">/${p} — ${Math.pow(2, p - current.prefix)} blocks</option>`).join('');
+      if (!opts.length) { newPrefix.innerHTML = '<option value="">nothing smaller than /32</option>'; return; }
+      newPrefix.value = opts.includes(keep) ? keep : opts[Math.min(1, opts.length - 1)];
+    }
+
+    function renderCut() {
+      const table = $('cutTable');
+      if (!current || !newPrefix.value) {
+        table.innerHTML = ''; $('cutSummary').textContent = ''; $('cutError').textContent = '';
+        return;
+      }
+      const r = IPv4.subdivide(current.cidr, Number(newPrefix.value));
+      if (!r.ok) { $('cutError').textContent = r.error; table.innerHTML = ''; return; }
+      $('cutError').textContent = '';
+      $('cutSummary').textContent =
+        `— ${r.borrowed} bit${r.borrowed === 1 ? '' : 's'} borrowed, ` +
+        `${commas(r.count)} block${r.count === 1 ? '' : 's'} of ${commas(r.usableEach)} usable, ` +
+        `boundaries every ${commas(r.blockSize)}` + (r.truncated ? ` (first ${r.shown} shown)` : '');
+
+      table.innerHTML =
+        '<thead><tr><th>#</th><th>Network</th><th>First host</th><th>Last host</th><th>Broadcast</th></tr></thead>' +
+        '<tbody>' + r.subnets.map(s =>
+          `<tr><td>${s.index}</td><td>${s.cidr}</td><td>${s.firstHost}</td><td>${s.lastHost}</td>` +
+          `<td>${s.broadcast || '—'}</td></tr>`).join('') + '</tbody>';
+    }
+
+    function renderHosts() {
+      const r = IPv4.prefixForHosts(Number($('hostsNeeded').value));
+      if (!r.ok) { $('hostsError').textContent = r.error; $('hostsResult').textContent = ''; return; }
+      $('hostsError').textContent = '';
+      $('hostsResult').innerHTML = '';
+      const line = document.createElement('div');
+      line.textContent = `/${r.prefix}  —  ${r.mask}`;
+      const sub = document.createElement('div');
+      sub.className = 'muted';
+      sub.style.marginTop = '6px';
+      sub.textContent = `${r.hostBits} host bits → ${commas(r.usable)} usable, ` +
+                        `${commas(r.spare)} spare. The next block down (/${r.prefix + 1}) holds ` +
+                        `${commas(Math.pow(2, r.hostBits - 1) - 2)}, which is not enough.`;
+      $('hostsResult').append(line, sub);
+    }
+
+    cidrInput.addEventListener('input', render);
+    prefixRange.addEventListener('input', () => {
+      // Rewrite the prefix in place so the text field stays the single source of
+      // truth — two inputs that each hold half the answer is how they drift.
+      const parsed = IPv4.splitCidr(cidrInput.value);
+      const addr = parsed.ok ? parsed.addr : cidrInput.value.trim().split(/[\s/]/)[0];
+      cidrInput.value = `${addr}/${prefixRange.value}`;
+      render();
+    });
+    newPrefix.addEventListener('change', renderCut);
+    $('hostsNeeded').addEventListener('input', renderHosts);
+
+    $('maskTable').innerHTML =
+      '<thead><tr><th>Prefix</th><th>Mask</th><th>Wildcard</th><th>Block</th><th>Usable</th></tr></thead><tbody>' +
+      Array.from({ length: 33 }, (_, p) => {
+        const mask = IPv4.prefixToMask(p), size = Math.pow(2, 32 - p);
+        const usable = p === 32 ? 1 : p === 31 ? 2 : size - 2;
+        return `<tr><td>/${p}</td><td>${IPv4.formatIp(mask)}</td>` +
+               `<td>${IPv4.formatIp((~mask) >>> 0)}</td><td>${commas(size)}</td>` +
+               `<td>${commas(usable)}${p >= 31 ? ' *' : ''}</td></tr>`;
+      }).join('') + '</tbody>';
+
+    render();
+    renderHosts();
+  })();
+  </script>
+</body>
+</html>
